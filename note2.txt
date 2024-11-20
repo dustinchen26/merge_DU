@@ -1,0 +1,108 @@
+修正html錯誤，
+如果遇到前面的時間，除了跳過時間列，Tput那列也要跳過
+舉例:
+01.txt如下，
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+02.txt如下，注意出現上面重複的時間14:00:15 2024
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+                       GNB DU Statistics  Fri Nov 15 14:00:35 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.53  UL Tpt 40.16
+                       GNB DU Statistics  Fri Nov 15 14:00:45 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 40.95
+                       GNB DU Statistics  Fri Nov 15 14:00:55 2024
+                       GNB DU Statistics  
+預期合併輸出，只從後面的時間開始，也就是結合01.txt和02.txt的GNB DU Statistics  Fri Nov 15 14:00:35 2024後面時間
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+                       GNB DU Statistics  Fri Nov 15 14:00:35 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.53  UL Tpt 40.16
+                       GNB DU Statistics  Fri Nov 15 14:00:45 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 40.95
+                       GNB DU Statistics  Fri Nov 15 14:00:55 2024
+                       GNB DU Statistics  
+=================================================
+錯誤輸出
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+                       GNB DU Statistics  Fri Nov 15 14:00:35 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.53  UL Tpt 40.16
+                       GNB DU Statistics  Fri Nov 15 14:00:45 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 40.95
+                       GNB DU Statistics  Fri Nov 15 14:00:55 2024
+                       GNB DU Statistics  
+很明顯時間重複的列後方的SCH DL Tpt沒有跟著跳過
+舉例:
+01.txt如下，
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+02.txt如下，注意出現上面重複的時間14:00:15 2024
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+                       GNB DU Statistics  Fri Nov 15 14:00:35 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.53  UL Tpt 40.16
+                       GNB DU Statistics  Fri Nov 15 14:00:45 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 40.95
+預期合併輸出，只從後面的時間開始，也就是結合01.txt和02.txt的GNB DU Statistics  Fri Nov 15 14:00:35 2024後面時間
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+                       GNB DU Statistics  Fri Nov 15 14:00:35 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.53  UL Tpt 40.16
+                       GNB DU Statistics  Fri Nov 15 14:00:45 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 40.95

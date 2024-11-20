@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>merge_DU_and_filter_Tput</title>
+    <style>
+        body {
+            line-height: 1.2;
+            font-size: 14px;
+            font-family: Roboto, sans-serif;
+            padding: 20px;
+        }	
+
+        #progress {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>merge_DU_and_filter_Tput</h2>
+	
+    <p style="margin: 0;">Author: Dustin_Chen, email: <a href="mailto:Dustin_Chen@compal.com">Dustin_Chen@compal.com</a> or <a href="mailto:chuhpsdustin@gmail.com">chuhpsdustin@gmail.com</a></p>
+    <br>
+    <label for="fileInput">請選擇多個du_status_XXX.txt檔案，會自動上傳合併以後，下載Tput數據:</label>
+	<br>
+	<br>
+    <input type="file" id="fileInput" accept=".txt" multiple><br><br>
+
+    <button id="processBtn" onclick="processFiles()">處理檔案</button>
+    
+    <div id="progress">
+        <p>目前進度: <span id="progressText">尚未開始</span></p>
+        <progress id="progressBar" value="0" max="100" style="width: 100%;"></progress>
+    </div>
+
+    <script>
+        let processedData = [];
+        let totalChunks = 0;
+        let currentChunk = 0;
+        let chunkSize = 10 * 1024 * 1024;  // 每個區塊10MB
+        let lastTimestamp = null;  // 存储最新的时间戳
+        let filesToProcess = [];  // 要處理的檔案
+        let timestampsSet = new Set(); // 用來記錄已處理的時間戳，防止重複
+        let gnbDuStatsSet = new Set(); // 用來記錄已處理的 GNB DU Statistics，防止重複
+
+        // 處理多個檔案
+        function processFiles() {
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) {
+                alert("請先選擇檔案！");
+                return;
+            }
+
+            filesToProcess = Array.from(files);
+            totalChunks = filesToProcess.length;  // 進度的總檔案數
+            currentChunk = 0;
+            processedData = [];
+            timestampsSet.clear();  // 清空之前的時間戳記錄
+            gnbDuStatsSet.clear();  // 清空已處理的 GNB DU Statistics 記錄
+
+            // 清除之前的輸出
+            document.getElementById('progressText').textContent = '處理中...';
+            document.getElementById('progressBar').value = 0;
+
+            processNextFile();
+        }
+
+        function processNextFile() {
+            if (currentChunk < filesToProcess.length) {
+                const file = filesToProcess[currentChunk];
+                totalChunks = Math.ceil(file.size / chunkSize);
+                currentChunkInFile = 0;
+                readNextChunk(file, currentChunkInFile);
+            } else {
+                document.getElementById('progressText').textContent = '處理完成！';
+                autoDownloadResult();
+            }
+        }
+
+        function readNextChunk(file, currentChunkInFile) {
+            const reader = new FileReader();
+            const start = currentChunkInFile * chunkSize;
+            const end = Math.min(start + chunkSize, file.size);
+            const chunk = file.slice(start, end);
+
+            reader.onload = function(event) {
+                const chunkContent = event.target.result;
+                processChunk(chunkContent);
+            };
+
+            reader.onerror = function() {
+                alert("檔案讀取錯誤！");
+            };
+
+            reader.readAsText(chunk);
+        }
+
+        function processChunk(chunkContent) {
+            const lines = chunkContent.split('\n');
+            const totalLinesInChunk = lines.length;
+
+            let previousTimestamp = null;
+
+            // 處理每一行
+            for (let i = 0; i < totalLinesInChunk; i++) {
+                const line = lines[i];
+
+                // 檢查是否包含時間戳（例如 "Fri Nov 15 14:00:05 2024"）
+                const timestampRegex = /\b([A-Za-z]{3} \w{3} \d{2} \d{2}:\d{2}:\d{2} \d{4})\b/;
+                const timestampMatch = line.match(timestampRegex);
+
+                if (timestampMatch) {
+                    // 提取時間戳
+                    const timestamp = timestampMatch[0];
+
+                    // 如果時間戳已經處理過，跳過該行及其下方的 SCH DL Tpt 行
+                    if (timestampsSet.has(timestamp)) {
+                        // 跳過當前的時間戳和隨後的 `SCH DL Tpt` 行
+                        previousTimestamp = null; // 清空 previousTimestamp，以避免遗漏
+                        continue;
+                    }
+
+                    // 記錄已處理的時間戳
+                    timestampsSet.add(timestamp);
+                    previousTimestamp = timestamp; // 記錄這一時間戳
+                }
+
+                // 如果該行包含 GNB DU Statistics 且未處理過，則加入結果
+                if (line.includes('GNB DU Statistics')) {
+                    if (!gnbDuStatsSet.has(line)) {
+                        gnbDuStatsSet.add(line);
+                        processedData.push(line);  // 保留首次出現的 GNB DU Statistics
+                    }
+                }
+
+                // 如果該行包含 `SCH DL Tpt` 且對應時間戳未處理過，則加入結果
+                if (line.includes('SCH  DL Tpt') && previousTimestamp) {
+                    processedData.push(line);
+                }
+            }
+
+            currentChunkInFile++;
+
+            // 更新進度條
+            const progress = Math.round(((currentChunk * totalChunks + currentChunkInFile) / (totalChunks * filesToProcess.length)) * 100);
+            document.getElementById('progressBar').value = progress;
+            document.getElementById('progressText').textContent = `處理進度: ${progress}%`;
+
+            // 若還有剩餘區塊，繼續讀取下一區塊
+            if (currentChunkInFile < totalChunks) {
+                readNextChunk(filesToProcess[currentChunk], currentChunkInFile);
+            } else {
+                currentChunk++;
+                processNextFile();
+            }
+        }
+
+        function autoDownloadResult() {
+            const resultContent = processedData.join('\n');
+            const blob = new Blob([resultContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'processed_result.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

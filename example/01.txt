@@ -1,0 +1,9 @@
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07

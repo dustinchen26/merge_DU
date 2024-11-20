@@ -1,0 +1,210 @@
+修改底下html
+舉例輸入兩個檔案如下
+輸入01.txt如下
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+	 
+輸入02.txt如下，注意跟01.txt後面重複，
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+                       GNB DU Statistics  Fri Nov 15 14:00:35 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.53  UL Tpt 40.16
+                       GNB DU Statistics  Fri Nov 15 14:00:45 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 40.95
+
+					   
+將兩者合併，預期02接在01之後，而且重複的只輸出一遍，得到結果如下
+                       GNB DU Statistics  Fri Nov 15 14:00:05 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.57  UL Tpt 40.83
+                       GNB DU Statistics  Fri Nov 15 14:00:15 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.54  UL Tpt 40.20
+                       GNB DU Statistics  Fri Nov 15 14:00:25 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 41.07
+                       GNB DU Statistics  Fri Nov 15 14:00:35 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.53  UL Tpt 40.16
+                       GNB DU Statistics  Fri Nov 15 14:00:45 2024
+                       GNB DU Statistics  
+	 SCH  DL Tpt : 0.55  UL Tpt 40.95
+
+修正底下html
+<!-- 
+  Copyright © [2023] [Dustin_Chen]. All rights reserved.
+  Author: Dustin_Chen 
+  Email:  Dustin_Chen@compal.com or chuhpsdustin@gmail.com
+-->
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>merge_DU_and_filter_Tput</title>
+    <style>
+        body {
+            line-height: 1.2;
+            font-size: 14px;
+            font-family: Roboto, sans-serif;
+            padding: 20px;
+        }	
+
+        #progress {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>merge_DU_and_filter_Tput</h2>
+	
+    <p style="margin: 0;">Author: Dustin_Chen, email: <a href="mailto:Dustin_Chen@compal.com">Dustin_Chen@compal.com</a> or <a href="mailto:chuhpsdustin@gmail.com">chuhpsdustin@gmail.com</a></p>
+    <br>
+    <label for="fileInput">請選擇多個du_status_XXX.txt檔案，會自動上傳合併以後，下載Tput數據:</label>
+	<br>
+	<br>
+    <input type="file" id="fileInput" accept=".txt" multiple><br><br>
+
+    <button id="processBtn" onclick="processFiles()">處理檔案</button>
+    
+    <div id="progress">
+        <p>目前進度: <span id="progressText">尚未開始</span></p>
+        <progress id="progressBar" value="0" max="100" style="width: 100%;"></progress>
+    </div>
+
+    <script>
+        let processedData = [];
+        let totalChunks = 0;
+        let currentChunk = 0;
+        let chunkSize = 10 * 1024 * 1024;  // 每個區塊10MB
+        let lastTimestamp = null;  // 存储最新的时间戳
+        let filesToProcess = [];  // 要處理的檔案
+
+        // 處理多個檔案
+        function processFiles() {
+            const files = document.getElementById('fileInput').files;
+            if (files.length === 0) {
+                alert("請先選擇檔案！");
+                return;
+            }
+
+            filesToProcess = Array.from(files);
+            totalChunks = filesToProcess.length;  // 進度的總檔案數
+            currentChunk = 0;
+            processedData = [];
+
+            // 清除之前的輸出
+            document.getElementById('progressText').textContent = '處理中...';
+            document.getElementById('progressBar').value = 0;
+
+            processNextFile();
+        }
+
+        function processNextFile() {
+            if (currentChunk < filesToProcess.length) {
+                const file = filesToProcess[currentChunk];
+                totalChunks = Math.ceil(file.size / chunkSize);
+                currentChunkInFile = 0;
+                readNextChunk(file, currentChunkInFile);
+            } else {
+                document.getElementById('progressText').textContent = '處理完成！';
+                autoDownloadResult();
+            }
+        }
+
+        function readNextChunk(file, currentChunkInFile) {
+            const reader = new FileReader();
+            const start = currentChunkInFile * chunkSize;
+            const end = Math.min(start + chunkSize, file.size);
+            const chunk = file.slice(start, end);
+
+            reader.onload = function(event) {
+                const chunkContent = event.target.result;
+                processChunk(chunkContent);
+            };
+
+            reader.onerror = function() {
+                alert("檔案讀取錯誤！");
+            };
+
+            reader.readAsText(chunk);
+        }
+
+        function processChunk(chunkContent) {
+            const lines = chunkContent.split('\n');
+            const totalLinesInChunk = lines.length;
+
+            // 處理每一行
+            for (let i = 0; i < totalLinesInChunk; i++) {
+                const line = lines[i];
+
+                // 檢查是否包含時間戳（例如 "Fri Nov 15 14:00:05 2024"）
+                const timestampRegex = /\b([A-Za-z]{3} \w{3} \d{2} \d{2}:\d{2}:\d{2} \d{4})\b/;
+                const timestampMatch = line.match(timestampRegex);
+
+                if (timestampMatch) {
+                    // 提取時間戳
+                    const timestamp = timestampMatch[0];
+                    const timestampDate = new Date(timestamp);
+
+                    // 如果当前时间戳小于或等于上一个时间戳，则跳过该行
+                    if (lastTimestamp && timestampDate <= lastTimestamp) {
+                        continue;
+                    }
+
+                    // 更新最新时间戳
+                    lastTimestamp = timestampDate;
+                }
+
+                // 如果該行符合條件，處理並加入到結果中
+                if (line.includes('GNB DU Statistics') || line.includes('SCH  DL Tpt')) {
+                    processedData.push(line);
+                }
+            }
+
+            currentChunkInFile++;
+
+            // 更新進度條
+            const progress = Math.round(((currentChunk * totalChunks + currentChunkInFile) / (totalChunks * filesToProcess.length)) * 100);
+            document.getElementById('progressBar').value = progress;
+            document.getElementById('progressText').textContent = `處理進度: ${progress}%`;
+
+            // 若還有剩餘區塊，繼續讀取下一區塊
+            if (currentChunkInFile < totalChunks) {
+                readNextChunk(filesToProcess[currentChunk], currentChunkInFile);
+            } else {
+                currentChunk++;
+                processNextFile();
+            }
+        }
+
+        function autoDownloadResult() {
+            const resultContent = processedData.join('\n');
+            const blob = new Blob([resultContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'processed_result.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
